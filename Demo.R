@@ -1,6 +1,5 @@
-setwd("./code/")
-source('main.R')
-source("data-generation.R")
+source('./main.R')
+source("./data-generation.R")
 library(RLRsim)
 library(lme4)
 library(nlme)
