@@ -1,3 +1,4 @@
+# Derived from the MFPCA package.
 simMultiWeight.mod = function (argvals, M, eFunType, ignoreDeg = NULL){
   p <- length(argvals)
   dimsSupp <- foreach::foreach(j = seq_len(p), .combine = "c") %do% 
