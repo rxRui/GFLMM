@@ -1,7 +1,7 @@
 # GFLMM
 Here are files to fit the GFLMM and implement the functional random effects testing method proposed by Rui et al. (2024). For more details, please refer to the paper "Unveiling Schizophrenia: A Study with Generalized Functional Linear Mixed Model via the Investigation of Functional Random Effects". 
 
-Before running the code, please make sure that the following required packages are installed and all .R files are placed at current work space. Specifically, packages include:
+Before running the code, please make sure that the following required packages are installed and all .R files are placed at current workspace. Specifically, packages include:
 
 library(MASS) 
 
