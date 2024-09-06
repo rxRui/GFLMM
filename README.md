@@ -1,4 +1,4 @@
-# GFLMM
+# GFLMM:  Generalized Functional Linear Mixed Model with functional random effects for repeated measurement functional data with measurement errors
 Here are files to reproduce the functional random effects testing method for the GFLMM model proposed by Rui et al. (2024). For more details, please refer to the paper "Unveiling Schizophrenia: A Study with Generalized Functional Linear Mixed Model via the Investigation of Functional Random Effects". 
 
 Before running the code, please make sure that the following required packages are installed and all .R files are placed at current workspace. Specifically, packages include:
@@ -13,7 +13,7 @@ library(lme4)
 
 library(RLRsim)
 
-# main.R 
+## main.R 
 The main.R includes core functions related to the proposed testing method, which are:
 
 pca.score.fun(): Perform joint and separate FPCA to get related FPCs;
@@ -36,7 +36,7 @@ construct_beta_fun(): Extract estimated beta functions from the fit.fun();
 
 get.est.coef.fun(): Extract all estimated terms from GFLM and GFLMM, including scalar-valued coefficients, functional coefficients, etc.
 
-# generation.R
+## generation.R
 The generation.R includes functions to generate simulation data in which the functionality of each function is shown by its name:
 
 simMultiWeight.mod(); 
@@ -51,11 +51,12 @@ generate_beta.i_fun();
 
 generate_data_fun().
 
-# Demo.R 
+## Demo.R 
 Demo.R can be directly executed to obtain testing results based on the generated pseudo-sample, using our proposed method (gflmmLA.wei()) as well as a candidate method (gflmmPQL()). The Poisson-distributed case can also be accessed by simply changing the parameters from `fam=binomial` and `adj=1.0` to `fam=poisson` and `adj=0.25`. 
 Here, the `adj` parameter is used to control the size of the Poisson-distributed response for numerical analysis.
 
 
+# Comparions of FPCA methods for the robustness of the parameter estimation in mixed effect models.
 # FPCA_comparison.R
 The file FPCA_comparison.R is used to illustrate the robust performance of different FPCA methods for parameter estimation due to various representations of multivariate functional predictors $X$. In particular, FPCA methods in the R package \texttt{MFPCA} and \texttt{fgm} are used to produce different types of representations for the same $X$.
 
