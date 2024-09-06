@@ -54,3 +54,23 @@ generate_data_fun().
 # Demo.R 
 Demo.R can be directly executed to obtain testing results based on the generated pseudo-sample, using our proposed method (gflmmLA.wei()) as well as a candidate method (gflmmPQL()). The Poisson-distributed case can also be accessed by simply changing the parameters from `fam=binomial` and `adj=1.0` to `fam=poisson` and `adj=0.25`. 
 Here, the `adj` parameter is used to control the size of the Poisson-distributed response for numerical analysis.
+
+
+# FPCA_comparison.R
+The file FPCA_comparison.R is used to illustrate the robust performance of different FPCA methods for parameter estimation due to various representations of multivariate functional predictors $X$. In particular, FPCA methods in the R package \texttt{MFPCA} and \texttt{fgm} are used to produce different types of representations for the same $X$.
+
+The following R packages are required:
+
+library(fgm)
+
+library(lme4)
+
+library(RLRsim)
+
+library(FDA)
+
+library(mvtnorm)
+
+library(MFPCA)
+
+library(fda.usc)
