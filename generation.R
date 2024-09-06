@@ -72,7 +72,7 @@ generate_func_predictor_fun = function(trueBasis, scoreRes, M.true.max, p, err =
 }
 
 # generate beta(t) and delta(t)
-generate_beta_delta_fun = function(trueBasis, p, M.true.max){
+generate_beta_delta_fun = function(trueBasis, p, M.true.max, adj = 1.0){
   coefs = rep(2, M.true.max)
   betaFuns = vector("list", p)
   for (j in seq_len(p)) {
@@ -82,24 +82,32 @@ generate_beta_delta_fun = function(trueBasis, p, M.true.max){
   }
   
   betaFuns = multiFunData(betaFuns)
-  
-  return(list(betaFuns=betaFuns, deltaFuns=-1*betaFuns))
+  # set deltaFuns = betaFuns
+  return(list(betaFuns=betaFuns*adj, deltaFuns=-1*betaFuns*adj))
 }
 
 # generate funcitonal random effects
-generate_beta.i_fun = function(trueBasis, p, nSubs, N, M.true.max, is.dummy=FALSE, sdk=0.5){
+generate_beta.i_fun = function(trueBasis, p, nSubs, N, M.true.max, 
+                               is.dummy=FALSE, sdk=0.5, adj = 1.0){
   beta.i = vector('list', p)
   for(j in 1:p){
+    #if(length(sdk) == 1){
     theta.I = mvrnorm(nSubs, mu=rep(0, M.true.max),
-                      Sigma = diag(c(sdk^(j-1), sdk^(j))))
-    if(is.dummy){ 
+                      Sigma = diag(c(sdk^(j-1), sdk^j)))
+    #}else if(length(sdk) == p){
+    #   theta.i = mvrnorm(nSubs, mu=rep(0, M.true.max),
+    #                     Sigma = diag(rep(2*sdk[j]^j, M.true.max)))
+    # }else{stop('Wrong: sdk should be a number or a numeric with length equal to p')}
+    # theta.I = apply(theta.i, 2, function(obj){rep(obj, each=N)})
+    if(is.dummy){ # include functional predictor without random effect
       if(j == p){
         Bi.temp = array(0, dim = c(nSubs, dim(trueBasis[[j]]@X)[-1]))
-      }else{
-        Bi.temp = apply(trueBasis[[j]]@X, -1, function(obj){theta.I%*%obj})
+        # Bi.temp = array(0, dim = c(N*nSubs, ncol(trueBasis[[j]]@X)))
+      }else{# set the last functional predictor to be no random effects.
+        Bi.temp = (apply(trueBasis[[j]]@X, -1, function(obj){theta.I%*%obj}))*adj
       }
     }else{
-      Bi.temp = apply(trueBasis[[j]]@X, -1, function(obj){theta.I%*%obj})
+      Bi.temp = (apply(trueBasis[[j]]@X, -1, function(obj){theta.I%*%obj}))*adj
     }
     beta.i[[j]] = funData(trueBasis[[j]]@argvals, Bi.temp)
   }
@@ -109,32 +117,42 @@ generate_beta.i_fun = function(trueBasis, p, nSubs, N, M.true.max, is.dummy=FALS
 
 # generate data function.
 generate_data_fun = function(argvals, M, p, eFunType, ignoreDeg=NULL, nSubs=10, N=40,
-                             is.dummy = FALSE, sdk=0.5, err=0., is.indep=FALSE, DataComb.fit=NULL){
+                             is.dummy = FALSE, sdk=0.5,
+                             err=0., is.indep=FALSE, family='binomial', DataComb.fit=NULL,
+                             adj = 1.0){
   trueBasis = simMultiWeight.mod(argvals=argvals, M=M, 
                                  eFunType=eFunType, 
                                  ignoreDeg=ignoreDeg)
-  M.true.max = max(unlist(M)) 
+  M.true.max = max(unlist(M)) # assuming for the first fun., m=c(1,m.true.max).
   scoreRes = generate_score_fun(M.true.max = M.true.max, p = p, nSubs = nSubs, N=N, is.indep=is.indep)
   XFunDataRes = generate_func_predictor_fun(trueBasis = trueBasis,
                                             scoreRes = scoreRes, M.true.max = M.true.max,
                                             p = p, err = err)
   
-  alpha0 = 0.5
-  alpha = 2
-  gamma = 2
+  if(family == 'binomial'){
+    alpha0 = 2
+    alpha = 2
+    gamma = 2
+  }else if(family == 'poisson'){
+    alpha0 = 1
+    alpha = -2
+    gamma = 2
+  }
   if(is.null(DataComb.fit)){
     beta.delta.res = generate_beta_delta_fun(trueBasis=trueBasis, 
-                                             p=p, M.true.max=M.true.max)
+                                             p=p, M.true.max=M.true.max,
+                                             adj = adj)
     betaFuns = beta.delta.res$betaFuns
     deltaFuns = beta.delta.res$deltaFuns
     
     
     beta.I = generate_beta.i_fun(trueBasis= trueBasis, p=p, sdk = sdk, 
                                  nSubs = nSubs, is.dummy = is.dummy,
-                                 N=N, M.true.max = M.true.max)
+                                 N=N, M.true.max = M.true.max,
+                                 adj = adj)
     
-    gammaI = rep(rnorm(nSubs, mean = gamma, sd=1), each=N)
-    alphaI = rep(rnorm(nSubs, sd=1), each=N)
+    gammaI = (rep(rnorm(nSubs, mean = gamma, sd=1), each=N))
+    alphaI = (rep(rnorm(nSubs, sd=1), each=N))
   }else{
     betaFuns = DataComb.fit$true.coef$beta.true.fun
     deltaFuns = DataComb.fit$true.coef$delta.true.fun
@@ -145,8 +163,14 @@ generate_data_fun = function(argvals, M, p, eFunType, ignoreDeg=NULL, nSubs=10, 
     alphaI = rep(alphaI.uni[1:nSubs], each = N)
   }
   
+  
+  
+  # Z = rep(runif(nSubs, min = 0, max = 3), each=N)
   Z = rep(runif(nSubs, min = 0, max = 3), each=N)
   B = rbinom(N*nSubs, 1, prob = 0.5)
+  # B = rep(rbinom(N, 1, prob = 0.5), nSubs)
+  # B = rep(runif(N, min=0, max = 1), nSubs)
+  # B = rep(rnorm(N, mean=0, sd=1), nSubs)
   
   Xbeta = scalarProduct(XFunDataRes$XFunData, betaFuns)
   Xdelta = scalarProduct(XFunDataRes$XFunData, deltaFuns)
@@ -157,17 +181,35 @@ generate_data_fun = function(argvals, M, p, eFunType, ignoreDeg=NULL, nSubs=10, 
   }))
   
   
+  # XbetaI = as.numeric(sapply(seq_len(N*nSubs), function(m){
+  #   scalarProduct(extractObs(beta.I, obs = m),
+  #                 extractObs(XFunDataRes$XFunData, obs = m))
+  #   }))
+  # 
   XdeltaB = Xdelta*B
   Zalpha = Z*alpha
   BgammaI = B*gammaI
   
   ETA = alpha0 + alphaI + Zalpha + BgammaI + Xbeta + XdeltaB + XbetaI
-  prob= 1/(1+exp(-ETA))
-  Y = rbinom(N*nSubs, 1, prob)
+  if(family == 'binomial'){
+    mu = 1/(1+exp(-ETA))
+    Y = rbinom(N*nSubs, size = 1, prob = mu)
+  }else if(family == 'poisson'){
+    mu = exp(ETA)
+    Y = rpois(N*nSubs, lambda = mu)
+  }
   subID = rep(1:nSubs, each=N)
   
   DataComb = list(Y=Y, Z=Z, B=B, subID = subID,
-                  XfunData = XFunDataRes$XFunData)
+                  XfunData = XFunDataRes$XFunData,
+                  trueBasis = trueBasis,
+                  scoreRes = scoreRes,
+                  true.coef = list(
+                    alphaI = alphaI, gammaI = gammaI,
+                    ground.coef.true = c(alpha0, alpha, gamma),
+                    beta.true.fun = betaFuns,
+                    delta.true.fun = deltaFuns,
+                    beta.i.true.fun = beta.I))
   return(DataComb)
 }
 
