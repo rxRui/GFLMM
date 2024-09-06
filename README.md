@@ -52,4 +52,5 @@ generate_beta.i_fun();
 generate_data_fun().
 
 # Demo.R 
-Demo.R can be directly executed to obtain testing results based on the generated pseudo-sample, using our proposed method (gflmmLA.wei()) as well as a candidate method (gflmmPQL()). 
+Demo.R can be directly executed to obtain testing results based on the generated pseudo-sample, using our proposed method (gflmmLA.wei()) as well as a candidate method (gflmmPQL()). The Poisson-distributed case can also be accessed by simply changing the parameters from `fam=binomial` and `adj=1.0` to `fam=poisson` and `adj=0.25`. 
+Here, the `adj` parameter is used to control the size of the Poisson-distributed response for numerical analysis.
