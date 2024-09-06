@@ -6,12 +6,6 @@ library(mvtnorm)
 library(MFPCA)
 library(fda.usc)
 options(warn = -1)
-## Variables
-# Omega - list of precision matrices, one per eigenfunction
-# Sigma - list of covariance matrices, one per eigenfunction
-# theta - list of functional principal component scores
-# phi - list of eigenfunctions densely observed on a time grid
-# y - list containing densely observed multivariate (p-dimensional) functional data
 
 n_run = 100
 p = 2
@@ -133,33 +127,12 @@ for(i in 1:n_run){
   
   beta1Fun1 = funData(argvals = t, X=beta1Fun1.mat)
   beta2Fun1 = funData(argvals = t, X=beta2Fun1.mat)
-  # plot(beta1Fun, col='black')
-  # plot(beta1Fun1, add=T)
-  # plot(beta2Fun, col='black')
-  # plot(beta2Fun1, add=T)
   
   betaFun1 = list(beta1Fun1, beta2Fun1)
   betaFunList1 = append(betaFunList1, list(betaFun1))
   
   mise1 = norm((beta1Fun - beta1Fun1), square=T) + norm((beta2Fun - beta2Fun1), square=T) 
   sig1 = sqrt((summary(glmer.model1))$varcor$subID[1])
-  
-  
-  
-  # glm.model1 = glm(Y~-1+scores1, family = binomial)
-  # 
-  # 
-  # beta1Fun1.mat = glm.model1$coefficients[1:mMax1]%*%res$phi
-  # beta2Fun1.mat = glm.model1$coefficients[-(1:mMax1)]%*%res$phi
-  # 
-  # beta1Fun1 = funData(argvals = t, X=beta1Fun1.mat)
-  # beta2Fun1 = funData(argvals = t, X=beta2Fun1.mat)
-  # plot(beta1Fun1)
-  # plot(funData(X=t(beta1), argvals = t), add=T, col='black')
-  # plot(beta2Fun1)
-  # plot(funData(X=t(beta2), argvals = t), add=T, col='black')
-  
-  
   
   # estimation based on MFPCA
   f1 = funData(argvals = t, X = X[[1]])
@@ -200,11 +173,6 @@ for(i in 1:n_run){
   beta2.basis = beta2_MFPCA*fixef(glmer.model2)
   beta2Fun2 = funData(X=t(colSums(beta2.basis@X)), argvals = beta2.basis@argvals)
   
-  # plot(beta1Fun2)
-  # plot(funData(X=t(beta1), argvals = t), add=T, col='black')
-  # plot(beta2Fun2)
-  # plot(funData(X=t(beta2), argvals = t), add=T, col='black')
-  # 
   betaFun2 = list(beta1Fun2, beta2Fun2)
   betaFunList2 = append(betaFunList2, list(betaFun2))
   
@@ -215,25 +183,6 @@ for(i in 1:n_run){
   
   MISE = rbind(MISE, c(mise1, mise2))
   alpha_sigma = rbind(alpha_sigma, c(sig1, sig2))
-  # glm.model2 = glm(Y~-1+scores2, family = binomial)
-  # 
-  # # beta1
-  # beta1_MFPCA = pcaRes$functions[[1]][1:mMax2]
-  # 
-  # beta1.basis = beta1_MFPCA*glm.model2$coefficients
-  # 
-  # beta1Fun2 = funData(X=t(colSums(beta1.basis@X)), argvals = beta1.basis@argvals)
-  # plot(beta1Fun2)
-  # plot(funData(X=t(beta1), argvals = t), add=T, col='black')
-  # 
-  # # beta2
-  # beta2_MFPCA = pcaRes$functions[[2]][1:mMax2]
-  # 
-  # beta2.basis = beta2_MFPCA*glm.model2$coefficients
-  # 
-  # beta2Fun2 = funData(X=t(colSums(beta2.basis@X)), argvals = beta2.basis@argvals)
-  # plot(beta2Fun2)
-  # plot(funData(X=t(beta2), argvals = t), add=T, col='black')
   
 }
 
