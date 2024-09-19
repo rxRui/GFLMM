@@ -58,6 +58,7 @@ generate_score_fun = function(M.true.max, p, nSubs, N, is.indep = FALSE){
 
 # generate functional predictors
 generate_func_predictor_fun = function(trueBasis, scoreRes, M.true.max, p, err = 0.){
+  XFunData.noise = NULL
   XFunDataTemp = vector('list', p)
   for (j in seq_len(p)) {
     Xbtemp = apply(trueBasis[[j]]@X, -1, function(v) { scoreRes[[j]] %*% v })
@@ -66,9 +67,9 @@ generate_func_predictor_fun = function(trueBasis, scoreRes, M.true.max, p, err =
   }
   XFunData = multiFunData(XFunDataTemp)
   if(err != 0)
-    XFunData = addError(XFunData, sd=err)
+    XFunData.noise = addError(XFunData, sd=err)
   
-  return(list(XFunData = XFunData))
+  return(list(XFunData = XFunData, XFunData.noise=XFunData.noise))
 }
 
 # generate beta(t) and delta(t)
@@ -91,18 +92,11 @@ generate_beta.i_fun = function(trueBasis, p, nSubs, N, M.true.max,
                                is.dummy=FALSE, sdk=0.5, adj = 1.0){
   beta.i = vector('list', p)
   for(j in 1:p){
-    #if(length(sdk) == 1){
     theta.I = mvrnorm(nSubs, mu=rep(0, M.true.max),
                       Sigma = diag(c(sdk^(j-1), sdk^j)))
-    #}else if(length(sdk) == p){
-    #   theta.i = mvrnorm(nSubs, mu=rep(0, M.true.max),
-    #                     Sigma = diag(rep(2*sdk[j]^j, M.true.max)))
-    # }else{stop('Wrong: sdk should be a number or a numeric with length equal to p')}
-    # theta.I = apply(theta.i, 2, function(obj){rep(obj, each=N)})
     if(is.dummy){ # include functional predictor without random effect
       if(j == p){
         Bi.temp = array(0, dim = c(nSubs, dim(trueBasis[[j]]@X)[-1]))
-        # Bi.temp = array(0, dim = c(N*nSubs, ncol(trueBasis[[j]]@X)))
       }else{# set the last functional predictor to be no random effects.
         Bi.temp = (apply(trueBasis[[j]]@X, -1, function(obj){theta.I%*%obj}))*adj
       }
@@ -130,7 +124,7 @@ generate_data_fun = function(argvals, M, p, eFunType, ignoreDeg=NULL, nSubs=10, 
                                             p = p, err = err)
   
   if(family == 'binomial'){
-    alpha0 = 2
+    alpha0 = 0.5
     alpha = 2
     gamma = 2
   }else if(family == 'poisson'){
@@ -165,13 +159,9 @@ generate_data_fun = function(argvals, M, p, eFunType, ignoreDeg=NULL, nSubs=10, 
   
   
   
-  # Z = rep(runif(nSubs, min = 0, max = 3), each=N)
   Z = rep(runif(nSubs, min = 0, max = 3), each=N)
   B = rbinom(N*nSubs, 1, prob = 0.5)
-  # B = rep(rbinom(N, 1, prob = 0.5), nSubs)
-  # B = rep(runif(N, min=0, max = 1), nSubs)
-  # B = rep(rnorm(N, mean=0, sd=1), nSubs)
-  
+
   Xbeta = scalarProduct(XFunDataRes$XFunData, betaFuns)
   Xdelta = scalarProduct(XFunDataRes$XFunData, deltaFuns)
   
@@ -181,11 +171,6 @@ generate_data_fun = function(argvals, M, p, eFunType, ignoreDeg=NULL, nSubs=10, 
   }))
   
   
-  # XbetaI = as.numeric(sapply(seq_len(N*nSubs), function(m){
-  #   scalarProduct(extractObs(beta.I, obs = m),
-  #                 extractObs(XFunDataRes$XFunData, obs = m))
-  #   }))
-  # 
   XdeltaB = Xdelta*B
   Zalpha = Z*alpha
   BgammaI = B*gammaI
@@ -200,8 +185,15 @@ generate_data_fun = function(argvals, M, p, eFunType, ignoreDeg=NULL, nSubs=10, 
   }
   subID = rep(1:nSubs, each=N)
   
+  if(err == 0){
+    XfunData.return = XFunDataRes$XFunData
+  }else{
+    XfunData.return = XFunDataRes$XFunData.noise
+  }
+  
   DataComb = list(Y=Y, Z=Z, B=B, subID = subID,
-                  XfunData = XFunDataRes$XFunData,
+                  ETA = ETA,
+                  XfunData = XfunData.return,
                   trueBasis = trueBasis,
                   scoreRes = scoreRes,
                   true.coef = list(
@@ -212,4 +204,3 @@ generate_data_fun = function(argvals, M, p, eFunType, ignoreDeg=NULL, nSubs=10, 
                     beta.i.true.fun = beta.I))
   return(DataComb)
 }
-
