@@ -9,9 +9,9 @@ library(MFPCA)
 options(warn = -1)
 
 nSubs = 80 # the number of subjects
-N = 50 # the number of visits for each subject
+N = 80 # the number of visits for each subject
 
-## Here only shows the case of p=2, if one wants to consider different cases,
+## Here only give the case of p=2, if one wants to consider different cases,
 # please change the @param argvals, @param M, @param eFunType, and @ param ignoreDeg
 # correspondingly.
 # the number of functional predictors
@@ -40,13 +40,21 @@ is.dummy = TRUE
 # err = 0 without measurement errors
 err = 0.5  
 
-## generate responses with Binomial distribution
-fam = 'binomial'
-adj = 1.0 # default setting for binomial.
+#'###########Case 1: for binomial distribution #######################
+# # generate responses with Binomial distribution
 
-## generate responses with Poisson distribution
+fam = 'binomial'
+adj = 1.0 # default setting for binomial without scaling.
+
+#'###########Case 2: for Poisson distribution #######################
+# ## generate responses with Poisson distribution
+# # NOTE: There may show some massage like
+# # "Error in gflmm.res$fit : $ operator is invalid for atomic vectors".
+# # This is because the overinflated observations appear. In this case, 
+# # please change the @param adj to a smaller one.
+
 # fam = 'poisson'
-# adj = 0.20  # adjust factor for Poisson distribution
+# adj = 0.25  # adjust factor for Poisson distribution
 
 
 
@@ -55,6 +63,9 @@ DataComb = generate_data_fun(argvals=argvals, M=M, p=2,
                              eFunType=eFunType, ignoreDeg=ignoreDeg,
                              nSub=nSubs, N=N, is.dummy = is.dummy, err=err,
                              adj = adj, family = fam)
+# plot generated observations of Y
+par(mfrow=c(1,1), mar=c(4,4,2,1))
+plot(DataComb$Y, main='Generated observations of Y',xlab='', ylab='Y')
 
 pcaRes = pca.score.fun(XFunData = DataComb$XfunData, p=p)
 mComb = pcaRes$mComb
